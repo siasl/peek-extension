@@ -124,3 +124,7 @@ Settings sync through `chrome.storage.sync`.
 - `contextMenus`: the "Peek link" menu item
 - `storage`: your settings
 - `<all_urls>`: lets peek work on any site and lets the extension fetch pages for summaries
+
+## License
+
+MIT. See [LICENSE](LICENSE).
