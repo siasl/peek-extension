@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "Peek",
+  "version": "1.0.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxmpPvzHpMCNp5Dspl0+9CmSClkFeHOmMrorE6VCQhejCGQ9qGjzGTsaa8plvoYxC1j1OnuE+Vjgpxjv2cmuMaxKvDIRGP9QF+Nao46MuFHl/XpEiqTCLWOhl1vH075MA/OgPkjQESoCfpIMUjMMw4lk3uhJjFcs7EJBzkfZsYvFpFgPpdDHDCMa6g5/n5d3/ScAnJXA2aAojqx3AJ2+KA/qIPK0wDC6c+ax57l3zy3gON6JR7zO0klnnGSXltgYX67WVh+LW1eoad0qqCcw1bEomY0gtFbE37WIXlK9mMk/wbHVCaM/QS3zBuEYJgAkyWBw1pDwsQ7u0aFI+LN6j4QIDAQAB",
+  "description": "Preview links in a floating window, Arc-style. Click-with-modifier or right-click only; never on drag.",
+  "permissions": [
+    "declarativeNetRequest",
+    "contextMenus",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_title": "Peek settings",
+    "default_popup": "options.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "gnews.js",
+        "content.js",
+        "extract.js",
+        "summary.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "peek.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  }
+}

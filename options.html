@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root { color-scheme: light dark; }
+  body { font:14px -apple-system, system-ui, sans-serif; margin:16px; min-width:360px; }
+  label { display:block; margin:14px 0 4px; font-weight:600; }
+  textarea { width:100%; height:110px; box-sizing:border-box; }
+  small { opacity:.65; }
+</style>
+</head>
+<body>
+  <label for="modifier">Hold this key while clicking a link to peek</label>
+  <select id="modifier">
+    <option value="shift">Shift</option>
+    <option value="alt">Option / Alt</option>
+    <option value="ctrl">Control</option>
+    <option value="meta">Command / Windows</option>
+  </select>
+  <br><small>Right-click → "Peek link" always works. Dragging never triggers a peek.</small>
+
+  <label for="summaryMode">Hover link summaries</label>
+  <select id="summaryMode">
+    <option value="search">On search pages only</option>
+    <option value="all">On all sites</option>
+    <option value="off">Off</option>
+  </select>
+  <select id="summaryDelay" title="Hover delay">
+    <option value="400">after 0.4s</option>
+    <option value="700">after 0.7s</option>
+    <option value="1200">after 1.2s</option>
+  </select>
+  <div style="margin-top:8px">
+    <select id="summaryEngine">
+      <option value="auto">Engine: Apple Intelligence, then Chrome</option>
+      <option value="apple">Engine: Apple Intelligence only</option>
+      <option value="chrome">Engine: Chrome on-device only</option>
+    </select>
+  </div>
+  <div style="margin-top:6px"><small id="appleStatus"></small></div>
+  <div style="margin-top:8px">
+    <button id="enable">Enable summaries</button> <small id="status"></small>
+  </div>
+  <small>On any other site, hold Shift while hovering a link to summarize it.</small><br>
+  <small>Chrome's model needs a one-time download (Chrome only, not Helium).</small>
+
+  <label for="blocked">Disable on these sites (one per line)</label>
+  <textarea id="blocked" placeholder="docs.google.com&#10;figma.com"></textarea>
+  <br><small>Subdomains are included. Saved automatically.</small>
+  <script src="options.js"></script>
+</body>
+</html>
