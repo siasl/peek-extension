@@ -54,6 +54,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 });
 
+// Cmd+O: the shortcut works even when focus is inside the framed page. Does nothing if no peek is open.
+chrome.commands.onCommand.addListener((command, tab) => {
+  if (command === 'open-peek-in-tab' && tab?.id != null) {
+    chrome.tabs.sendMessage(tab.id, { type: 'peek-to-tab' }).catch(() => {});
+  }
+});
+
 // Page navigated or tab closed without an explicit close message.
 chrome.tabs.onUpdated.addListener((tabId, info) => {
   if (info.status === 'loading') disableFraming(tabId);

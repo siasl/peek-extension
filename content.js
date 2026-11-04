@@ -44,6 +44,7 @@ window.addEventListener(
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'peek' && msg.url) openPeek(msg.url);
+  if (msg.type === 'peek-to-tab') openPeekInTab();
 });
 
 // Google News links redirect with JavaScript, so find the publisher's URL first. On news.google.com
@@ -68,6 +69,7 @@ async function resolveNewsUrl(url) {
 }
 
 let host = null;
+let peekUrl = null;
 let cspListener = null;
 let savedScroll = null;
 
@@ -77,11 +79,22 @@ function lockPageScroll() {
   const gutter = window.innerWidth - de.clientWidth;
   savedScroll = {
     deOverflow: de.style.overflow, deRight: de.style.paddingRight,
-    bodyOverflow: body && body.style.overflow
+    bodyOverflow: body && body.style.overflow,
+    x: window.scrollX, y: window.scrollY
   };
   de.style.overflow = 'hidden';
   if (body) body.style.overflow = 'hidden';
   if (gutter > 0) de.style.paddingRight = gutter + 'px'; // avoid layout shift
+  restoreScroll(savedScroll);
+}
+
+// Some sites (Wikipedia) jump to the top when overflow changes, so put the page back where it was.
+function restoreScroll({ x, y }) {
+  const put = () => {
+    if (window.scrollX !== x || window.scrollY !== y) window.scrollTo({ left: x, top: y, behavior: 'instant' });
+  };
+  put();
+  requestAnimationFrame(put);
 }
 
 function unlockPageScroll() {
@@ -90,15 +103,25 @@ function unlockPageScroll() {
   de.style.overflow = savedScroll.deOverflow;
   de.style.paddingRight = savedScroll.deRight;
   if (body) body.style.overflow = savedScroll.bodyOverflow;
+  restoreScroll(savedScroll);
   savedScroll = null;
 }
+
+// Sites that don't work in a peek frame (login cookies aren't sent, or the page breaks), so open a tab instead.
+const NEW_TAB_HOSTS = /(^|\.)instagram\.com$/;
 
 async function openPeek(url) {
   closePeek();
   // Google News links are redirect pages; peek the publisher's article instead.
   try { url = await resolveNewsUrl(url); } catch {}
+  if (NEW_TAB_HOSTS.test(new URL(url).hostname)) {
+    chrome.runtime.sendMessage({ type: 'open-tab', url });
+    return;
+  }
   await chrome.runtime.sendMessage({ type: 'peek-open' });
 
+  peekUrl = url;
+  const openKey = /Mac/.test(navigator.platform) ? '⌘O' : 'Ctrl+O';
   host = document.createElement('div');
   host.style.cssText = 'all:initial;position:fixed;inset:0;z-index:2147483647;';
   const root = host.attachShadow({ mode: 'closed' });
@@ -121,6 +144,7 @@ async function openPeek(url) {
       button { border:0; background:transparent; font:inherit; color:inherit; cursor:pointer;
         padding:5px 9px; border-radius:6px; }
       button:hover { background:rgba(0,0,0,.08); }
+      .kbd { opacity:.5; margin-left:2px; }
       .body { flex:1; position:relative; }
       iframe { position:absolute; inset:0; width:100%; height:100%; border:0; background:#fff; }
     </style>
@@ -130,7 +154,7 @@ async function openPeek(url) {
         <button class="close" title="Close (Esc)">✕</button>
         <span class="url"></span>
         <button class="copy">Copy</button>
-        <button class="open">Open in tab ↗</button>
+        <button class="open" title="Open in new tab (${openKey})">Open in tab ↗ <span class="kbd">${openKey}</span></button>
       </div>
       <div class="body"></div>
     </div>`;
@@ -138,10 +162,7 @@ async function openPeek(url) {
   $('.url').textContent = url;
   $('.backdrop').addEventListener('click', closePeek);
   $('.close').addEventListener('click', closePeek);
-  $('.open').addEventListener('click', () => {
-    chrome.runtime.sendMessage({ type: 'open-tab', url });
-    closePeek();
-  });
+  $('.open').addEventListener('click', openPeekInTab);
   $('.copy').addEventListener('click', async (e) => {
     await navigator.clipboard.writeText(url);
     e.target.textContent = 'Copied';
@@ -190,10 +211,21 @@ function onMessage(e) {
   if (e.data && e.data.peek === 'close') closePeek();
 }
 
+function openPeekInTab() {
+  if (!host || !peekUrl) return;
+  chrome.runtime.sendMessage({ type: 'open-tab', url: peekUrl });
+  closePeek();
+}
+
 function onKey(e) {
   if (e.key === 'Escape') {
     e.stopPropagation();
     closePeek();
+  } else if (e.key.toLowerCase() === 'o' && e.metaKey && !e.shiftKey && !e.altKey && !e.ctrlKey) {
+    // Cmd+O. When focus is inside the framed page, the "open-peek-in-tab" command covers it.
+    e.preventDefault();
+    e.stopPropagation();
+    openPeekInTab();
   }
 }
 
@@ -201,6 +233,7 @@ function closePeek() {
   if (!host) return;
   host.remove();
   host = null;
+  peekUrl = null;
   unlockPageScroll();
   document.removeEventListener('securitypolicyviolation', cspListener);
   window.removeEventListener('message', onMessage);

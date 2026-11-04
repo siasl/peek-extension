@@ -20,6 +20,7 @@ The manifest pins the extension ID (`jfjllmekaamcnijkmjocccgeeepbbggd`) so the A
 | --- | --- |
 | Hold **Shift** and click a link | Opens the link in a peek overlay |
 | Right-click a link, then **Peek link** | Same, no keyboard needed |
+| **Cmd+O** (Ctrl+O elsewhere) | Opens the peeked link in a new tab and closes the peek |
 | **Esc** or click outside | Closes the peek |
 | Toolbar buttons in the peek | Close, copy link, open in a new tab |
 

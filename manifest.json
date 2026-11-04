@@ -12,6 +12,12 @@
   "host_permissions": [
     "<all_urls>"
   ],
+  "commands": {
+    "open-peek-in-tab": {
+      "suggested_key": { "default": "Ctrl+O", "mac": "Command+O" },
+      "description": "Open the current peek in a new tab"
+    }
+  },
   "action": {
     "default_title": "Peek settings",
     "default_popup": "options.html"
