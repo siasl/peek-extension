@@ -8,11 +8,25 @@ A Chrome/Chromium extension (tested in Helium) that brings Arc-style **Peek** an
 
 ## Install
 
-1. Open `chrome://extensions` and turn on **Developer mode**.
-2. Click **Load unpacked** and choose this folder.
-3. Pin the extension if you want quick access to its settings popup.
+Peek isn't on the Chrome Web Store, so you load it as an unpacked extension. It needs Chrome 116 or newer, or a Chromium browser based on it (Helium, Brave, Edge, Arc and others).
 
-The manifest pins the extension ID (`jfjllmekaamcnijkmjocccgeeepbbggd`) so the Apple Intelligence setup below keeps working across reloads.
+1. **Get the code.** Either:
+   - clone it: `git clone https://github.com/siasl/peek-extension.git`, or
+   - click **Code → Download ZIP** on the [GitHub page](https://github.com/siasl/peek-extension) and unzip it.
+
+   Keep the folder somewhere permanent. The browser loads the extension from it every time it starts, so deleting or moving the folder breaks the extension.
+2. Open `chrome://extensions` in your browser (Brave: `brave://extensions`, Edge: `edge://extensions`) and turn on **Developer mode**, usually a toggle in the top right.
+3. Click **Load unpacked** and choose the folder that contains `manifest.json`. That's the `peek-extension` folder itself, not a folder inside it.
+4. Click the puzzle-piece icon in the toolbar and pin **Peek** so its settings popup is one click away.
+5. Reload any pages that were already open. The extension only affects pages loaded after it was installed.
+
+To try it: hold **Shift** and click a link. A preview should open over the page.
+
+**Updating:** run `git pull` (or download the ZIP again), then click the reload icon on Peek's card at `chrome://extensions`.
+
+The manifest pins the extension ID (`jfjllmekaamcnijkmjocccgeeepbbggd`) so everyone who installs it gets the same ID, which the Apple Intelligence setup below relies on.
+
+Hover summaries need one more step. See [Summary engines](#summary-engines).
 
 ## Using Peek
 
@@ -20,7 +34,7 @@ The manifest pins the extension ID (`jfjllmekaamcnijkmjocccgeeepbbggd`) so the A
 | --- | --- |
 | Hold **Shift** and click a link | Opens the link in a peek overlay |
 | Right-click a link, then **Peek link** | Same, no keyboard needed |
-| **Cmd+O** (Ctrl+O elsewhere) | Opens the peeked link in a new tab and closes the peek |
+| **Cmd+O** (Ctrl+O on Windows/Linux) | Opens the peeked link in a new tab and closes the peek. If it does nothing, assign it at `chrome://extensions/shortcuts`. While the extension owns this key, it replaces your browser's "Open File" shortcut |
 | **Esc** or click outside | Closes the peek |
 | Toolbar buttons in the peek | Close, copy link, open in a new tab |
 
@@ -64,14 +78,16 @@ Everything runs on your device. Page text is sent only to a server on `127.0.0.1
 
 #### Apple Intelligence setup (macOS)
 
-Requires a Mac with Apple Intelligence enabled and [Homebrew](https://brew.sh).
+Requires a Mac with Apple Intelligence turned on (System Settings → Apple Intelligence & Siri) and [Homebrew](https://brew.sh). Run these from the `peek-extension` folder:
 
 ```bash
 brew install apfel
 ./apfel/install-service.sh
 ```
 
-The script installs a LaunchAgent (`com.peek.apfel`) that runs apfel at login on `http://127.0.0.1:11434`, allowing only this extension's origin. The popup shows whether apfel is running.
+The script installs a login item (a LaunchAgent named `com.peek.apfel`) that starts apfel automatically at login and keeps it running. It listens only on `http://127.0.0.1:11434`, so other computers can't reach it, and it accepts requests only from this extension. Read the script first if you like. It's short.
+
+Open the toolbar popup afterwards. It should say "Apple Intelligence (apfel): running." If it says "not running", see [Troubleshooting](#troubleshooting).
 
 To remove it:
 
@@ -94,6 +110,25 @@ The prompt lives in `background.js` as `SUMMARY_PROMPT`. Page text is trimmed to
 - Otherwise the card says it couldn't load the page.
 - Summaries are fetched without your cookies, so hovering never touches your logged-in sessions.
 
+## Troubleshooting
+
+| Problem | Try this |
+| --- | --- |
+| Shift-click does nothing | Reload the page. Check the site isn't in "Disable on these sites". Pages like `chrome://` and the Chrome Web Store can't run extensions. |
+| A site shows a login page or blank page in the peek | Some sites need their login cookies, which browsers don't send inside a frame on a different site (Instagram and X are examples). Add the site to "Open in a new tab instead of a peek" in the popup. |
+| Popup says apfel is "not running" | Make sure you ran `./apfel/install-service.sh` and that `apfel` is installed (`brew install apfel`). Check `~/Library/Logs/peek-apfel.log`. |
+| apfel won't start, or the port is in use | apfel uses port 11434, which is also Ollama's default. Quit Ollama or stop whatever else is using that port. |
+| Popup says apfel answered with an error | The extension ID differs from the one the script allowed. Make sure `manifest.json` still contains its `key`, then run the install script again. |
+| "No summary engine is available" | Set up Apple Intelligence above, or use Chrome's built-in model in Chrome 138+. |
+| Summaries get cut off | See [Changing the summary style](#changing-the-summary-style). |
+
+## Privacy
+
+- Link summaries run on your device. The page text goes only to apfel on `127.0.0.1` or to Chrome's own built-in model. Nothing is sent to an AI service on the internet.
+- To summarize a link, the extension downloads that page itself, without your cookies. This is the same request your browser would make if you visited the link.
+- For Google News links, it contacts `news.google.com` to find the original article, using your normal Google session.
+- Settings are stored in your browser's sync storage. The extension has no analytics, accounts or servers.
+
 ## Settings
 
 Click the toolbar icon to open the popup:
@@ -101,6 +136,7 @@ Click the toolbar icon to open the popup:
 - Peek modifier key
 - Summary mode, hover delay and engine
 - Apple Intelligence status and Chrome model download
+- **Open in a new tab instead of a peek**: one domain per line, subdomains included. Defaults to `instagram.com` and `x.com`, which don't work well in a frame
 - **Disable on these sites**: one domain per line, subdomains included
 
 Settings sync through `chrome.storage.sync`.

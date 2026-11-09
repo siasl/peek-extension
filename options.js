@@ -8,7 +8,15 @@ const appleStatus = document.getElementById('appleStatus');
 const enableBtn = document.getElementById('enable');
 const status = document.getElementById('status');
 
-chrome.storage.sync.get({ modifier: 'shift', blocked: [], summaryMode: 'search', summaryDelay: 700, summaryEngine: 'auto' }).then((s) => {
+const newTabSites = document.getElementById('newTabSites');
+const parseSites = (text) => text
+  .split('\n')
+  .map((l) => l.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''))
+  .filter(Boolean);
+newTabSites.addEventListener('input', () => chrome.storage.sync.set({ newTabSites: parseSites(newTabSites.value) }));
+
+chrome.storage.sync.get({ modifier: 'shift', blocked: [], summaryMode: 'search', summaryDelay: 700, summaryEngine: 'auto', newTabSites: ['instagram.com', 'x.com'] }).then((s) => {
+  newTabSites.value = s.newTabSites.join('\n');
   engineSel.value = s.summaryEngine;
   sumMode.value = s.summaryMode;
   sumDelay.value = String(s.summaryDelay);

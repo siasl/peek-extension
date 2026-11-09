@@ -2,7 +2,7 @@
 // when the "Peek link" context-menu item is used. There is deliberately no
 // drag handling anywhere in this extension.
 
-const DEFAULTS = { modifier: 'shift', blocked: [], summaryMode: 'search', summaryDelay: 700, summaryEngine: 'auto' };
+const DEFAULTS = { modifier: 'shift', blocked: [], summaryMode: 'search', summaryDelay: 700, summaryEngine: 'auto', newTabSites: ['instagram.com', 'x.com'] };
 let settings = { ...DEFAULTS };
 
 chrome.storage.sync.get(DEFAULTS).then((s) => { settings = { ...DEFAULTS, ...s }; });
@@ -11,9 +11,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
   for (const k in changes) settings[k] = changes[k].newValue;
 });
 
+const hostIn = (list, host) => (list || []).some((b) => b && (host === b || host.endsWith('.' + b)));
+
 function siteBlocked() {
-  const host = location.hostname;
-  return (settings.blocked || []).some((b) => b && (host === b || host.endsWith('.' + b)));
+  return hostIn(settings.blocked, location.hostname);
 }
 
 function modifierMatches(e) {
@@ -107,14 +108,13 @@ function unlockPageScroll() {
   savedScroll = null;
 }
 
-// Sites that don't work in a peek frame (login cookies aren't sent, or the page breaks), so open a tab instead.
-const NEW_TAB_HOSTS = /(^|\.)instagram\.com$/;
 
 async function openPeek(url) {
   closePeek();
   // Google News links are redirect pages; peek the publisher's article instead.
   try { url = await resolveNewsUrl(url); } catch {}
-  if (NEW_TAB_HOSTS.test(new URL(url).hostname)) {
+  // Sites listed in settings (login cookies aren't sent in a frame, or the page breaks) open a tab instead.
+  if (hostIn(settings.newTabSites, new URL(url).hostname)) {
     chrome.runtime.sendMessage({ type: 'open-tab', url });
     return;
   }
