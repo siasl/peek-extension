@@ -97,21 +97,23 @@ async function fetchPage(url) {
   }
 }
 
-// ---- Apple Intelligence via apfel (brew install apfel) ----------------------
-// Streams a summary from apfel's local OpenAI-compatible server to a content script.
+// ---- Summaries from a local OpenAI-compatible server --------------------------
+// Works with apfel (Apple Intelligence), Ollama, LM Studio and anything else that speaks
+// /v1/chat/completions. The URL and model come from the popup. Streams to a content script.
 
-const APFEL_URL = 'http://127.0.0.1:11434/v1/chat/completions';
+const DEFAULT_LLM = { llmUrl: 'http://127.0.0.1:11434/v1', llmModel: 'apple-foundationmodel' };
 const SUMMARY_PROMPT =
   'Summarize the web page below in about 50 words. Bullet Points are allowed.' +
   'Do not mention "the page" or "the article".';
 
-async function streamApfel(text, port, signal) {
-  const res = await fetch(APFEL_URL, {
+async function streamChat(text, port, signal) {
+  const { llmUrl, llmModel } = await chrome.storage.sync.get(DEFAULT_LLM);
+  const res = await fetch(llmUrl.replace(/\/+$/, '') + '/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     signal,
     body: JSON.stringify({
-      model: 'apple-foundationmodel',
+      model: llmModel,
       stream: true,
       temperature: 0.3,
       max_tokens: 250,
@@ -121,7 +123,7 @@ async function streamApfel(text, port, signal) {
       ]
     })
   });
-  if (!res.ok) throw new Error('apfel HTTP ' + res.status);
+  if (!res.ok) throw new Error('server HTTP ' + res.status);
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
@@ -129,7 +131,7 @@ async function streamApfel(text, port, signal) {
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
-    buf += decoder.decode(value, { stream: true });
+    buf += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
     let i;
     while ((i = buf.indexOf('\n\n')) !== -1) {
       const line = buf.slice(0, i).trim();
@@ -137,7 +139,8 @@ async function streamApfel(text, port, signal) {
       if (!line.startsWith('data:')) continue;
       const data = line.slice(5).trim();
       if (data === '[DONE]') return port.postMessage({ type: 'done' });
-      const delta = JSON.parse(data).choices?.[0]?.delta?.content;
+      let delta;
+      try { delta = JSON.parse(data).choices?.[0]?.delta?.content; } catch { continue; }
       if (delta) port.postMessage({ type: 'chunk', text: delta });
     }
   }
@@ -145,12 +148,13 @@ async function streamApfel(text, port, signal) {
 }
 
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name !== 'apfel') return;
+  if (port.name !== 'llm') return;
   const ctrl = new AbortController();
   port.onDisconnect.addListener(() => ctrl.abort());
   port.onMessage.addListener(async ({ text }) => {
     try {
-      await streamApfel(text, port, AbortSignal.any([ctrl.signal, AbortSignal.timeout(20000)]));
+      // Generous timeout: a local model may need to load into memory on the first request.
+      await streamChat(text, port, AbortSignal.any([ctrl.signal, AbortSignal.timeout(60000)]));
     } catch (err) {
       try { port.postMessage({ type: 'error', error: String(err) }); } catch {}
     }

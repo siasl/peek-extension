@@ -29,5 +29,9 @@ cat > "$PLIST" <<PLISTEOF
 PLISTEOF
 
 launchctl bootout "gui/$(id -u)/com.peek.apfel" 2>/dev/null || true
+# A server left over from an earlier run (or started by hand) would hold the port and make the
+# login item fail and retry forever, so stop it before launchd takes over.
+pkill -f "apfel --serve" 2>/dev/null || true
+sleep 1
 launchctl bootstrap "gui/$(id -u)" "$PLIST"
 echo "apfel is running with chrome-extension://$EXT_ID allowed."

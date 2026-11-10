@@ -117,10 +117,10 @@ function snippetFor(anchor) {
 // ---- summarizer engines ----------------------------------------------------
 // Each returns the final summary, or null if that engine is unavailable.
 
-// Apple Intelligence, through apfel's local server (see background.js).
-function summarizeWithApple(text, onText, alive) {
+// A local OpenAI-compatible server (apfel, Ollama, LM Studio...), configured in the popup.
+function summarizeWithServer(text, onText, alive) {
   return new Promise((resolve) => {
-    const port = chrome.runtime.connect({ name: 'apfel' });
+    const port = chrome.runtime.connect({ name: 'llm' });
     let out = '';
     let settled = false;
     const finish = (v) => { if (!settled) { settled = true; port.disconnect(); resolve(v); } };
@@ -224,11 +224,11 @@ async function summarizeLinkInner(anchor, url, token) {
   showCard(anchor, 'Summarizing…', { title: meta.title || linkTitle, image: meta.image });
 
   const onText = (t) => alive() && showCard(anchor, t);
-  const engine = settings.summaryEngine;
+  const engine = settings.summaryEngine === 'apple' ? 'server' : settings.summaryEngine; // 'apple' = old name
   let out = null;
-  if (engine !== 'chrome') out = await summarizeWithApple(text, onText, alive);
+  if (engine !== 'chrome') out = await summarizeWithServer(text, onText, alive);
   if (!alive()) return;
-  if (out == null && engine !== 'apple') out = await summarizeWithChrome(text, onText, alive);
+  if (out == null && engine !== 'server') out = await summarizeWithChrome(text, onText, alive);
   if (!alive()) return;
 
   if (out) {
