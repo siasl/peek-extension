@@ -6,9 +6,9 @@ A Chrome/Chromium extension (tested in Helium) that brings Arc-style **Peek** an
 - **Hover summaries**: hover a link to get a short on-device summary with a thumbnail, like Arc's "5 second previews".
 - **Never triggered by dragging.** Peek only opens from a modifier-click or the right-click menu.
 
-[![Peek demo video. Click to watch.](docs/media/peek-demo-poster.jpg)](docs/media/peek-demo.mp4)
+![Peek demo: Shift-click a link to preview it, then press Cmd+O to open it in a tab](docs/media/peek-demo.gif)
 
-*Click the image to watch the full demo (30 seconds, 2 MB).*
+*Prefer a sharper version? [Watch the video](docs/media/peek-demo.mp4) (30 seconds, 2 MB).*
 
 ## Install
 
