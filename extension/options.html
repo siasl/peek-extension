@@ -23,10 +23,17 @@
   select, button { cursor: pointer; }
   select { background-color: color-mix(in srgb, currentColor 5%, transparent); }
   input[type=text] { margin-top: 8px; }
-  textarea { height: 62px; resize: vertical; }
+  textarea { height: 76px; resize: vertical; }
   select:focus, input:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   button { width: auto; background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; padding: 6px 12px; }
   button:disabled { opacity: .45; cursor: default; }
+  .tabs { display: flex; gap: 4px; margin: 10px 0 0; border-bottom: 1px solid var(--line); }
+  .tabs button { background: transparent; color: var(--muted); border: 0; border-bottom: 2px solid transparent;
+    border-radius: 6px 6px 0 0; padding: 7px 14px; margin-bottom: -1px; font-weight: 600; }
+  .tabs button:hover { color: inherit; }
+  .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+  .panel[hidden] { display: none; }
+  .panel > section:first-child { border-top: 0; margin-top: 0; padding-top: 16px; }
   small { color: var(--muted); display: block; margin-top: 6px; font-size: 12.5px; }
   a { color: var(--accent); }
   .status { margin-top: 8px; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
@@ -43,8 +50,14 @@
     <a id="welcomeLink" href="welcome.html" target="_blank">Welcome guide</a>
   </header>
 
+  <nav class="tabs" role="tablist" aria-label="Settings">
+    <button role="tab" id="tab-peek" aria-controls="panel-peek" aria-selected="true">Peek</button>
+    <button role="tab" id="tab-summaries" aria-controls="panel-summaries" aria-selected="false" tabindex="-1">Summaries</button>
+  </nav>
+
+  <div class="panel" id="panel-peek" role="tabpanel" aria-labelledby="tab-peek">
   <section>
-    <h2>Peek a link</h2>
+    <h2>Shortcut</h2>
     <label for="modifier">Hold this key while clicking a link</label>
     <select id="modifier">
       <option value="shift">Shift</option>
@@ -56,7 +69,19 @@
   </section>
 
   <section>
-    <h2>Link summaries</h2>
+    <h2>Sites</h2>
+    <label for="newTabSites">Open in a new tab instead of a peek</label>
+    <textarea id="newTabSites" placeholder="Example:&#10;instagram.com&#10;x.com"></textarea>
+    <small>For sites that don't work in a peek. One per line, subdomains included.</small>
+
+    <label for="blocked" class="gap">Turn Peek off on these sites</label>
+    <textarea id="blocked" placeholder="Example:&#10;docs.google.com&#10;figma.com"></textarea>
+    <small>One per line, subdomains included. This also turns off summaries there. Changes save automatically.</small>
+  </section>
+  </div>
+
+  <div class="panel" id="panel-summaries" role="tabpanel" aria-labelledby="tab-summaries" hidden>
+  <section>
     <label for="summaryMode">Show a summary when you hover a link</label>
     <div class="row">
       <select id="summaryMode">
@@ -71,6 +96,13 @@
       </select>
     </div>
     <small>On any other site, hold <kbd>Shift</kbd> while hovering a link.</small>
+
+    <label for="summaryStyle" class="gap">Summary style</label>
+    <select id="summaryStyle"></select>
+    <div id="customStyle" hidden>
+      <textarea id="summaryPrompt" style="height:96px;margin-top:8px" placeholder="Tell the model how to write the summary"></textarea>
+      <small>These instructions are sent to your local server along with the page text. Chrome's built-in model can't take custom instructions, so it uses the standard style.</small>
+    </div>
 
     <label for="summaryEngine" class="gap">Where summaries come from</label>
     <select id="summaryEngine">
@@ -99,18 +131,12 @@
       <small id="chromeNote">Chrome's model needs a one-time download.</small>
     </div>
   </section>
+  </div>
 
-  <section>
-    <h2>Sites</h2>
-    <label for="newTabSites">Open in a new tab instead of a peek</label>
-    <textarea id="newTabSites" placeholder="instagram.com&#10;x.com"></textarea>
-    <small>For sites that don't work in a peek. One per line, subdomains included.</small>
 
-    <label for="blocked" class="gap">Turn Peek off on these sites</label>
-    <textarea id="blocked" placeholder="docs.google.com&#10;figma.com"></textarea>
-    <small>One per line, subdomains included. Changes save automatically.</small>
-  </section>
 
+
+  <script src="styles.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

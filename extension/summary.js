@@ -136,15 +136,20 @@ function summarizeWithServer(text, onText, alive) {
 }
 
 // Chrome's built-in Gemini Nano. Only used when the model is already downloaded.
-let chromeSummarizer = null;
+const chromeSummarizers = new Map(); // "type/length" -> Summarizer promise
 async function summarizeWithChrome(text, onText, alive) {
+  // Chrome's model takes options, not free text, so a custom prompt falls back to the standard style.
+  const { type, length } = (SUMMARY_STYLES[settings.summaryStyle] || SUMMARY_STYLES[DEFAULT_SUMMARY_STYLE]).chrome;
+  const key = type + '/' + length;
   try {
     if (typeof Summarizer === 'undefined' || (await Summarizer.availability()) !== 'available') return null;
-    chromeSummarizer ||= Summarizer.create({
-      type: 'tldr', length: 'medium', format: 'plain-text', outputLanguage: 'en',
-      sharedContext: 'A web page the user is considering opening from a link.'
-    });
-    const s = await chromeSummarizer;
+    if (!chromeSummarizers.has(key)) {
+      chromeSummarizers.set(key, Summarizer.create({
+        type, length, format: 'plain-text', outputLanguage: 'en',
+        sharedContext: 'A web page the user is considering opening from a link.'
+      }));
+    }
+    const s = await chromeSummarizers.get(key);
     let out = '';
     for await (const chunk of s.summarizeStreaming(text)) {
       if (!alive()) return null;
@@ -153,13 +158,15 @@ async function summarizeWithChrome(text, onText, alive) {
     }
     return out.trim() || null;
   } catch {
-    chromeSummarizer = null;
+    chromeSummarizers.delete(key);
     return null;
   }
 }
 
 let warnedUnavailable = false;
-const summaryCache = new Map(); // url -> { text, title, image }
+const summaryCache = new Map(); // style + url -> { text, title, image }
+// A different style (or custom prompt) means a different summary, so it is part of the cache key.
+const cacheKey = (url) => settings.summaryStyle + '\n' + (settings.summaryStyle === 'custom' ? settings.summaryPrompt : '') + '\n' + url;
 
 // ---- hover handling --------------------------------------------------------
 
@@ -198,7 +205,7 @@ async function summarizeLinkInner(anchor, url, token) {
   const alive = () => token === hoverToken && hoverAnchor === anchor;
 
   const linkTitle = (anchor.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 140);
-  const cached = summaryCache.get(url);
+  const cached = summaryCache.get(cacheKey(url));
   if (cached) return showCard(anchor, cached.text, { title: cached.title || linkTitle, image: cached.image });
   showCard(anchor, 'Summarizing…', { title: linkTitle });
 
@@ -232,7 +239,7 @@ async function summarizeLinkInner(anchor, url, token) {
   if (!alive()) return;
 
   if (out) {
-    summaryCache.set(url, { text: out, title: meta.title, image: meta.image });
+    summaryCache.set(cacheKey(url), { text: out, title: meta.title, image: meta.image });
     return showCard(anchor, out);
   }
   if (warnedUnavailable) return hideCard();

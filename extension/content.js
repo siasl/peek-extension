@@ -2,7 +2,7 @@
 // when the "Peek link" context-menu item is used. There is deliberately no
 // drag handling anywhere in this extension.
 
-const DEFAULTS = { modifier: 'shift', blocked: [], summaryMode: 'search', summaryDelay: 700, summaryEngine: 'auto', newTabSites: ['instagram.com', 'x.com'] };
+const DEFAULTS = { modifier: 'shift', blocked: [], summaryMode: 'search', summaryDelay: 700, summaryEngine: 'auto', summaryStyle: 'standard', summaryPrompt: '', newTabSites: ['instagram.com', 'x.com'] };
 let settings = { ...DEFAULTS };
 
 chrome.storage.sync.get(DEFAULTS).then((s) => { settings = { ...DEFAULTS, ...s }; });

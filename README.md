@@ -109,7 +109,7 @@ Page text goes only to the server you set (or to Chrome's built-in model). The p
 2. In the server settings, turn on **Enable CORS**. For a server on another machine, turn on serving on the local network.
 3. In the Peek popup, choose the **LM Studio** preset (`http://127.0.0.1:1234/v1`), and pick the model in the model box.
 
-Smaller models vary in how well they follow the summary prompt. If summaries ramble, try a different model or edit the prompt (see [Changing the summary style](#changing-the-summary-style)).
+Smaller models vary in how well they follow the summary prompt. If summaries ramble, try a different model or change the [summary style](#summary-style).
 
 #### Apple Intelligence setup (macOS)
 
@@ -134,9 +134,20 @@ launchctl bootout gui/$(id -u)/com.peek.apfel && rm ~/Library/LaunchAgents/com.p
 
 This works in Google Chrome 138+, not in Helium or other Chromium builds that cannot download Gemini Nano. The popup detects which browser you're using and, if Chrome's model isn't available, hides this setup and points you to a local server instead. Open the popup and click **Enable summaries** to download the model once. Peek only uses Chrome's model if it is already downloaded.
 
-### Changing the summary style
+### Summary style
 
-The prompt lives in `extension/background.js` as `SUMMARY_PROMPT`. Page text is trimmed to 6,000 characters and the answer is capped at 250 tokens (`max_tokens` in `streamChat`), so raise those if summaries get cut off. Apple's model has a 4,096-token context window, so keep input modest. Models with larger context windows (most Ollama and LM Studio models) can take more.
+Pick how summaries are written under **Summary style** in the toolbar popup:
+
+| Style | What you get |
+| --- | --- |
+| **Short** | One or two sentences, under 30 words |
+| **Standard** (default) | About 50 words, bullet points allowed |
+| **Detailed** | About 100 words covering the main points |
+| **Custom instructions** | Write your own, for example "Two bullet points, then one sentence on why it matters" |
+
+Custom instructions are sent to your local server as the system prompt along with the page text. Choosing Custom starts the box from the style you were using, so you can edit it. Chrome's built-in model takes fixed options instead of free text, so it maps Short, Standard and Detailed to its own settings and uses Standard when you pick Custom.
+
+Summaries are cached per style, so changing the style regenerates them. For deeper changes, the page text is trimmed to 6,000 characters and the answer is capped at 400 tokens (`max_tokens` in `streamChat`, in `extension/background.js`). Apple's model has a 4,096-token context window, so keep input modest. Models with larger context windows (most Ollama and LM Studio models) can take more.
 
 ### What the card shows when a page can't be read
 
@@ -156,7 +167,7 @@ The prompt lives in `extension/background.js` as `SUMMARY_PROMPT`. Page text is 
 | Popup says the server refused the request (403) | The server is blocking browser extensions. Ollama: set `OLLAMA_ORIGINS=chrome-extension://*`. LM Studio: turn on Enable CORS. apfel: the extension ID differs from the one the script allowed, so make sure `extension/manifest.json` still contains its `key` and run the install script again. |
 | Popup says the server has no model with that name | Pick a model from the dropdown in the model box. For Ollama, run `ollama list` to see what's installed. |
 | "No summary engine is available" | Set up a local server above, or use Chrome's built-in model in Chrome 138+. |
-| Summaries get cut off | See [Changing the summary style](#changing-the-summary-style). |
+| Summaries get cut off | Pick a shorter [summary style](#summary-style). If it's still cut off, raise `max_tokens` in `extension/background.js`. |
 
 ## Privacy
 
@@ -170,7 +181,7 @@ The prompt lives in `extension/background.js` as `SUMMARY_PROMPT`. Page text is 
 Click the toolbar icon to open the popup:
 
 - Peek modifier key
-- Summary mode, hover delay and engine
+- Summary mode, hover delay, style (including custom instructions) and engine
 - Local server preset, address and model, with a live connection check, plus the Chrome model download
 - **Open in a new tab instead of a peek**: one domain per line, subdomains included. Defaults to `instagram.com` and `x.com`, which don't work well in a frame
 - **Disable on these sites**: one domain per line, subdomains included
@@ -187,6 +198,7 @@ Everything the browser loads lives in `extension/`. The rest of the repo is opti
 | `extension/background.js` | Header stripping, page fetching, streaming summaries from the model server, context menu |
 | `extension/content.js` | Click handling and the peek overlay |
 | `extension/summary.js` | Hover handling and the summary card |
+| `extension/styles.js` | The summary styles and their prompts, shared by the popup and the summarizer |
 | `extension/extract.js` | Pulls readable text, title and image from fetched HTML |
 | `extension/gnews.js` | Resolves Google News links to the original article |
 | `extension/peek.html`, `extension/peek.js` | Fallback frame used when a page's CSP blocks direct framing |

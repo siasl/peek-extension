@@ -1,4 +1,4 @@
-importScripts('gnews.js');
+importScripts('gnews.js', 'styles.js');
 
 // While a peek is open in a tab, strip the headers that forbid framing
 // (X-Frame-Options, CSP frame-ancestors) from sub-frame responses in that tab only.
@@ -104,12 +104,10 @@ async function fetchPage(url) {
 // /v1/chat/completions. The URL and model come from the popup. Streams to a content script.
 
 const DEFAULT_LLM = { llmUrl: 'http://127.0.0.1:11434/v1', llmModel: 'apple-foundationmodel' };
-const SUMMARY_PROMPT =
-  'Summarize the web page below in about 50 words. Bullet Points are allowed.' +
-  'Do not mention "the page" or "the article".';
 
 async function streamChat(text, port, signal) {
-  const { llmUrl, llmModel } = await chrome.storage.sync.get(DEFAULT_LLM);
+  const { llmUrl, llmModel, summaryStyle, summaryPrompt } =
+    await chrome.storage.sync.get({ ...DEFAULT_LLM, summaryStyle: DEFAULT_SUMMARY_STYLE, summaryPrompt: '' });
   const res = await fetch(llmUrl.replace(/\/+$/, '') + '/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -118,9 +116,9 @@ async function streamChat(text, port, signal) {
       model: llmModel,
       stream: true,
       temperature: 0.3,
-      max_tokens: 250,
+      max_tokens: 400,
       messages: [
-        { role: 'system', content: SUMMARY_PROMPT },
+        { role: 'system', content: summaryPromptFor(summaryStyle, summaryPrompt) },
         { role: 'user', content: text.slice(0, 6000) }
       ]
     })

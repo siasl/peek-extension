@@ -10,6 +10,10 @@ const llmModel = document.getElementById('llmModel');
 const modelList = document.getElementById('models');
 const serverStatus = document.getElementById('serverStatus');
 const serverBlock = document.getElementById('serverBlock');
+const chromeBlock = document.getElementById('chromeBlock');
+const styleSel = document.getElementById('summaryStyle');
+const customStyle = document.getElementById('customStyle');
+const promptBox = document.getElementById('summaryPrompt');
 const enableBtn = document.getElementById('enable');
 const status = document.getElementById('status');
 
@@ -28,8 +32,12 @@ const PRESETS = {
 
 chrome.storage.sync.get({
   modifier: 'shift', blocked: [], summaryMode: 'search', summaryDelay: 700, summaryEngine: 'auto',
-  newTabSites: ['instagram.com', 'x.com'], llmUrl: PRESETS.apple.url, llmModel: PRESETS.apple.model
+  newTabSites: ['instagram.com', 'x.com'], llmUrl: PRESETS.apple.url, llmModel: PRESETS.apple.model,
+  summaryStyle: DEFAULT_SUMMARY_STYLE, summaryPrompt: ''
 }).then((s) => {
+  styleSel.value = (SUMMARY_STYLES[s.summaryStyle] || s.summaryStyle === 'custom') ? s.summaryStyle : DEFAULT_SUMMARY_STYLE;
+  promptBox.value = s.summaryPrompt;
+  customStyle.hidden = styleSel.value !== 'custom';
   newTabSites.value = s.newTabSites.join('\n');
   engineSel.value = s.summaryEngine === 'apple' ? 'server' : s.summaryEngine; // 'apple' = old name
   showEngineSettings();
@@ -104,9 +112,33 @@ enableBtn.addEventListener('click', async () => {
 
 refreshStatus();
 
-// The local server settings only matter when the server can be used.
+// ---- summary style ---------------------------------------------------------------
+
+for (const [id, st] of Object.entries(SUMMARY_STYLES)) {
+  styleSel.append(Object.assign(document.createElement('option'), { value: id, textContent: st.label }));
+}
+styleSel.append(Object.assign(document.createElement('option'), { value: 'custom', textContent: 'Custom instructions…' }));
+
+let lastStyle = DEFAULT_SUMMARY_STYLE;
+chrome.storage.sync.get({ summaryStyle: DEFAULT_SUMMARY_STYLE }).then((s) => { lastStyle = s.summaryStyle; });
+
+styleSel.addEventListener('change', () => {
+  const style = styleSel.value;
+  // Start the custom box from the style you were just using, so there is something to edit.
+  if (style === 'custom' && !promptBox.value.trim()) {
+    promptBox.value = summaryPromptFor(lastStyle, '');
+    chrome.storage.sync.set({ summaryPrompt: promptBox.value });
+  }
+  customStyle.hidden = style !== 'custom';
+  lastStyle = style;
+  chrome.storage.sync.set({ summaryStyle: style });
+});
+promptBox.addEventListener('input', () => chrome.storage.sync.set({ summaryPrompt: promptBox.value }));
+
+// Each engine's settings only show when that engine can be used.
 function showEngineSettings() {
   serverBlock.hidden = engineSel.value === 'chrome';
+  chromeBlock.hidden = engineSel.value === 'server';
 }
 
 engineSel.addEventListener('change', () => {
@@ -202,3 +234,27 @@ llmUrl.addEventListener('change', () => { const u = normalizeUrl(llmUrl.value); 
 llmModel.addEventListener('input', () => { preset.value = guessPreset(); saveServer(); });
 
 
+
+// ---- tabs --------------------------------------------------------------------------
+
+const tabs = [...document.querySelectorAll('[role=tab]')];
+function selectTab(tab, focus) {
+  for (const t of tabs) {
+    const on = t === tab;
+    t.setAttribute('aria-selected', String(on));
+    t.tabIndex = on ? 0 : -1;
+    document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+  }
+  if (focus) tab.focus();
+  try { localStorage.setItem('tab', tab.id); } catch {}
+}
+for (const t of tabs) {
+  t.addEventListener('click', () => selectTab(t));
+  t.addEventListener('keydown', (e) => {
+    const i = tabs.indexOf(t);
+    if (e.key === 'ArrowRight') selectTab(tabs[(i + 1) % tabs.length], true);
+    else if (e.key === 'ArrowLeft') selectTab(tabs[(i + tabs.length - 1) % tabs.length], true);
+  });
+}
+// Reopen on the tab you used last.
+try { selectTab(tabs.find((t) => t.id === localStorage.getItem('tab')) || tabs[0]); } catch { selectTab(tabs[0]); }
