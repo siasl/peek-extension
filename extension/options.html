@@ -1,72 +1,116 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
+<title>Peek settings</title>
 <style>
-  :root { color-scheme: light dark; }
-  body { font:14px -apple-system, system-ui, sans-serif; margin:16px; min-width:360px; }
-  label { display:block; margin:14px 0 4px; font-weight:600; }
-  textarea { width:100%; height:110px; box-sizing:border-box; }
-  small { opacity:.65; }
-  input[type=text] { width:100%; box-sizing:border-box; margin-top:6px; padding:4px 6px; }
+  :root { color-scheme: light dark; --accent: #6a4dff; --muted: color-mix(in srgb, currentColor 62%, transparent); --line: color-mix(in srgb, currentColor 16%, transparent); }
+  * { box-sizing: border-box; }
+  body { font: 14px/1.45 -apple-system, system-ui, sans-serif; width: 400px; margin: 0; padding: 16px 18px 18px; }
+  header { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  header img { width: 30px; height: 30px; }
+  h1 { font-size: 18px; margin: 0; flex: 1; }
+  section { border-top: 1px solid var(--line); padding: 14px 0 4px; margin-top: 12px; }
+  h2 { font-size: 12px; margin: 0 0 10px; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+  label { display: block; margin: 0 0 4px; font-weight: 600; }
+  label.gap { margin-top: 14px; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; min-width: 0; }
+  .row > .narrow { flex: 0 0 auto; }
+  select, input[type=text], textarea, button {
+    font: inherit; color: inherit; background: transparent; border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 8px; width: 100%; }
+  select, button { cursor: pointer; }
+  select { background-color: color-mix(in srgb, currentColor 5%, transparent); }
+  input[type=text] { margin-top: 8px; }
+  textarea { height: 62px; resize: vertical; }
+  select:focus, input:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button { width: auto; background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; padding: 6px 12px; }
+  button:disabled { opacity: .45; cursor: default; }
+  small { color: var(--muted); display: block; margin-top: 6px; font-size: 12.5px; }
+  a { color: var(--accent); }
+  .status { margin-top: 8px; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+  .status:empty { display: none; }
+  kbd { font: 12px ui-monospace, monospace; padding: 0 5px; border: 1px solid var(--line); border-radius: 4px; }
+  .chrome { margin-top: 14px; }
+  .chrome #status { margin-left: 8px; color: var(--muted); font-size: 12.5px; }
 </style>
 </head>
 <body>
-  <label for="modifier">Hold this key while clicking a link to peek</label>
-  <select id="modifier">
-    <option value="shift">Shift</option>
-    <option value="alt">Option / Alt</option>
-    <option value="ctrl">Control</option>
-    <option value="meta">Command / Windows</option>
-  </select>
-  <br><small>Right-click → "Peek link" always works. Dragging never triggers a peek.</small>
+  <header>
+    <img src="icons/icon128.png" alt="">
+    <h1>Peek</h1>
+    <a id="welcomeLink" href="welcome.html" target="_blank">Welcome guide</a>
+  </header>
 
-  <label for="summaryMode">Hover link summaries</label>
-  <select id="summaryMode">
-    <option value="search">On search pages only</option>
-    <option value="all">On all sites</option>
-    <option value="off">Off</option>
-  </select>
-  <select id="summaryDelay" title="Hover delay">
-    <option value="400">after 0.4s</option>
-    <option value="700">after 0.7s</option>
-    <option value="1200">after 1.2s</option>
-  </select>
-  <div style="margin-top:8px">
-    <select id="summaryEngine">
-      <option value="auto">Engine: local server, then Chrome</option>
-      <option value="server">Engine: local server only</option>
-      <option value="chrome">Engine: Chrome on-device only</option>
+  <section>
+    <h2>Peek a link</h2>
+    <label for="modifier">Hold this key while clicking a link</label>
+    <select id="modifier">
+      <option value="shift">Shift</option>
+      <option value="alt">Option / Alt</option>
+      <option value="ctrl">Control</option>
+      <option value="meta">Command / Windows</option>
     </select>
-  </div>
+    <small>Right-click a link and choose "Peek link" any time. Dragging never opens a peek.</small>
+  </section>
 
-  <div id="serverBlock">
-  <label for="preset">Local server (Apple Intelligence, Ollama, LM Studio…)</label>
-  <select id="preset">
-    <option value="apple">Apple Intelligence (apfel)</option>
-    <option value="ollama">Ollama</option>
-    <option value="lmstudio">LM Studio</option>
-    <option value="custom">Custom</option>
-  </select>
-  <input id="llmUrl" type="text" placeholder="http://127.0.0.1:11434/v1" spellcheck="false" autocomplete="off">
-  <input id="llmModel" type="text" list="models" placeholder="Model name, e.g. llama3.2" spellcheck="false" autocomplete="off">
-  <datalist id="models"></datalist>
-  <div style="margin-top:6px"><small id="serverStatus"></small></div>
-  </div>
+  <section>
+    <h2>Link summaries</h2>
+    <label for="summaryMode">Show a summary when you hover a link</label>
+    <div class="row">
+      <select id="summaryMode">
+        <option value="search">On search pages only</option>
+        <option value="all">On all sites</option>
+        <option value="off">Off</option>
+      </select>
+      <select id="summaryDelay" title="Hover delay" class="narrow" style="width:auto">
+        <option value="400">after 0.4s</option>
+        <option value="700">after 0.7s</option>
+        <option value="1200">after 1.2s</option>
+      </select>
+    </div>
+    <small>On any other site, hold <kbd>Shift</kbd> while hovering a link.</small>
 
-  <div id="chromeBlock" style="margin-top:8px">
-    <button id="enable">Enable summaries</button> <small id="status"></small><br>
-    <small id="chromeNote">Chrome's model needs a one-time download.</small>
-  </div>
-  <small>On any other site, hold Shift while hovering a link to summarize it.</small>
+    <label for="summaryEngine" class="gap">Where summaries come from</label>
+    <select id="summaryEngine">
+      <option value="auto">Local server, then Chrome</option>
+      <option value="server">Local server only</option>
+      <option value="chrome">Chrome on-device only</option>
+    </select>
 
-  <label for="newTabSites">Open links to these sites in a new tab instead of a peek</label>
-  <textarea id="newTabSites" placeholder="instagram.com&#10;x.com"></textarea>
-  <br><small>For sites that don't work in a peek. Subdomains are included. Saved automatically.</small>
+    <div id="serverBlock">
+      <label for="preset" class="gap">Local server</label>
+      <select id="preset">
+        <option value="apple">Apple Intelligence (apfel)</option>
+        <option value="ollama">Ollama</option>
+        <option value="lmstudio">LM Studio</option>
+        <option value="custom">Custom</option>
+      </select>
+      <input id="llmUrl" type="text" placeholder="http://127.0.0.1:11434/v1" spellcheck="false" autocomplete="off">
+      <input id="llmModel" type="text" list="models" placeholder="Model name, e.g. llama3.2" spellcheck="false" autocomplete="off">
+      <datalist id="models"></datalist>
+      <div class="status" id="serverStatus"></div>
+      <small>Summaries are written by an AI model running on your computer or network. <span id="serverHelp"></span> <a id="helpLink" href="https://github.com/siasl/peek-extension#summary-engines" target="_blank" rel="noopener">Setup instructions</a></small>
+    </div>
 
-  <label for="blocked">Disable on these sites (one per line)</label>
-  <textarea id="blocked" placeholder="docs.google.com&#10;figma.com"></textarea>
-  <br><small>Subdomains are included. Saved automatically.</small>
+    <div id="chromeBlock" class="chrome">
+      <button id="enable">Enable summaries</button><span id="status"></span>
+      <small id="chromeNote">Chrome's model needs a one-time download.</small>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sites</h2>
+    <label for="newTabSites">Open in a new tab instead of a peek</label>
+    <textarea id="newTabSites" placeholder="instagram.com&#10;x.com"></textarea>
+    <small>For sites that don't work in a peek. One per line, subdomains included.</small>
+
+    <label for="blocked" class="gap">Turn Peek off on these sites</label>
+    <textarea id="blocked" placeholder="docs.google.com&#10;figma.com"></textarea>
+    <small>One per line, subdomains included. Changes save automatically.</small>
+  </section>
+
   <script src="options.js"></script>
 </body>
 </html>

@@ -68,12 +68,14 @@ chrome.tabs.onUpdated.addListener((tabId, info) => {
 chrome.tabs.onRemoved.addListener((tabId) => disableFraming(tabId));
 
 // Right-click a link -> "Peek link"
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
   chrome.contextMenus.create({
     id: 'peek-link',
     title: 'Peek link',
     contexts: ['link']
   });
+  // First install only (not updates or reloads): show the welcome page.
+  if (details.reason === 'install') chrome.tabs.create({ url: chrome.runtime.getURL('welcome.html') });
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {

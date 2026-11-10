@@ -36,6 +36,7 @@ chrome.storage.sync.get({
   llmUrl.value = s.llmUrl;
   llmModel.value = s.llmModel;
   preset.value = guessPreset();
+  showHelp();
   refreshServer();
   sumMode.value = s.summaryMode;
   sumDelay.value = String(s.summaryDelay);
@@ -177,7 +178,21 @@ preset.addEventListener('change', () => {
   saveServer();
 });
 
+const REPO = 'https://github.com/siasl/peek-extension';
+const HELP = {
+  apple: ['Apple Intelligence needs the free apfel helper, installed with Homebrew.', '#apple-intelligence-setup-macos'],
+  ollama: ['Ollama must allow browser extensions (OLLAMA_ORIGINS) and have a model pulled.', '#ollama'],
+  lmstudio: ['In LM Studio, start the Developer server and turn on Enable CORS.', '#lm-studio'],
+  custom: ['Any server with an OpenAI-compatible API works.', '#summary-engines']
+};
+function showHelp() {
+  const [text, anchor] = HELP[preset.value] || HELP.custom;
+  document.getElementById('serverHelp').textContent = text;
+  document.getElementById('helpLink').href = REPO + anchor;
+}
+
 function saveServer() {
+  showHelp();
   const url = normalizeUrl(llmUrl.value);
   if (url) chrome.storage.sync.set({ llmUrl: url, llmModel: llmModel.value.trim() });
   refreshServer();

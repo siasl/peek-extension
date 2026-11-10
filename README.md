@@ -24,6 +24,8 @@ Peek isn't on the Chrome Web Store, so you load it as an unpacked extension. It 
 4. Click the puzzle-piece icon in the toolbar and pin **Peek** so its settings popup is one click away.
 5. Reload any pages that were already open. The extension only affects pages loaded after it was installed.
 
+A welcome page opens the first time you install the extension. It covers the basics and checks whether a summary model is already running on your computer. You can reopen it any time from the toolbar popup.
+
 To try it: hold **Shift** and click a link. A preview should open over the page.
 
 **Updating:** run `git pull` (or download the ZIP again), then click the reload icon on Peek's card at `chrome://extensions`.
@@ -189,6 +191,7 @@ Everything the browser loads lives in `extension/`. The rest of the repo is opti
 | `extension/gnews.js` | Resolves Google News links to the original article |
 | `extension/peek.html`, `extension/peek.js` | Fallback frame used when a page's CSP blocks direct framing |
 | `extension/options.html`, `extension/options.js` | Toolbar popup |
+| `extension/welcome.html`, `extension/welcome.js` | Welcome page shown on first install |
 | `extension/icons/` | Toolbar and store icons (source: `docs/icon.svg`) |
 | `apfel/install-service.sh` | Optional LaunchAgent for Apple Intelligence |
 | `docs/media/` | Demo video and GIFs used in this README (not part of the extension) |
