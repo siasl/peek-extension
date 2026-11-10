@@ -6,6 +6,10 @@ A Chrome/Chromium extension (tested in Helium) that brings Arc-style **Peek** an
 - **Hover summaries**: hover a link to get a short on-device summary with a thumbnail, like Arc's "5 second previews".
 - **Never triggered by dragging.** Peek only opens from a modifier-click or the right-click menu.
 
+[![Peek demo video. Click to watch.](docs/media/peek-demo-poster.jpg)](docs/media/peek-demo.mp4)
+
+*Click the image to watch the full demo (30 seconds, 2 MB).*
+
 ## Install
 
 Peek isn't on the Chrome Web Store, so you load it as an unpacked extension. It needs Chrome 116 or newer, or a Chromium browser based on it (Helium, Brave, Edge, Arc and others).
@@ -60,7 +64,15 @@ Set this in the toolbar popup:
 | **On all sites** | Every link, on every site |
 | **Off** | No summaries |
 
-On any site, **hold Shift while hovering** a link to summarize it, even in "search pages only" mode. Pressing Shift while already resting on a link works too. Scrolling, clicking or pressing another key dismisses the card.
+On a search page, just hover a link:
+
+![Hovering a link in Google search results shows a summary card](docs/media/summary-from-search.gif)
+
+On any other site, **hold Shift while hovering** a link to summarize it, even in "search pages only" mode:
+
+![Holding Shift while hovering a link on Google News shows a summary card](docs/media/summary-elsewhere.gif)
+
+Pressing Shift while already resting on a link works too. Scrolling, clicking or pressing another key dismisses the card.
 
 The hover delay can be set to 0.4s, 0.7s (default) or 1.2s.
 
@@ -154,6 +166,7 @@ Settings sync through `chrome.storage.sync`.
 | `peek.html`, `peek.js` | Fallback frame used when a page's CSP blocks direct framing |
 | `options.html`, `options.js` | Toolbar popup |
 | `apfel/install-service.sh` | Optional LaunchAgent for Apple Intelligence |
+| `docs/media/` | Demo video and GIFs used in this README (not part of the extension) |
 
 ## Permissions
 
